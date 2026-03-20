@@ -1,5 +1,13 @@
 {% extends "base.html" %}
-{% block title %}{{ user.name }} — FriendSync{% endblock %}
+{% block title %}{{ user.name }} — FriendSync  @media (max-width: 768px) {
+    .profile-avatar-wrap { margin-left: 16px; }
+    .profile-avatar { width: 80px !important; height: 80px !important; }
+    .stat-box { padding: 12px 10px; }
+    .stat-num { font-size: 1.3rem; }
+    .cover-area { height: 140px !important; }
+    .tab-btn { padding: 7px 12px; font-size: 0.78rem; }
+  }
+{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -32,12 +40,7 @@
     padding: 3px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   }
   .profile-avatar-inner {
-    width: 106px;
-    height: 106px;
-    border-radius: 50%;
-    object-fit: cover;
-    object-position: center top;
-    display: block;
+    width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
     background: var(--surface);
   }
   .stat-box {
@@ -92,9 +95,15 @@
   .tab-btn.active { background: rgba(108,99,255,0.15); color: var(--text); border-color: rgba(108,99,255,0.4); }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
-  .score-bar-track { background: var(--border); height: 4px; border-radius: 999px; overflow: hidden; }
-  .score-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 999px; transition: width 0.6s ease; }
 </style>
+  @media (max-width: 768px) {
+    .profile-avatar-wrap { margin-left: 16px; }
+    .profile-avatar { width: 80px !important; height: 80px !important; }
+    .stat-box { padding: 12px 10px; }
+    .stat-num { font-size: 1.3rem; }
+    .cover-area { height: 140px !important; }
+    .tab-btn { padding: 7px 12px; font-size: 0.78rem; }
+  }
 {% endblock %}
 
 {% block content %}
@@ -110,12 +119,14 @@
     <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;">
       <div style="display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;">
         <div class="profile-avatar-wrap">
-            <div style="background:linear-gradient(135deg,var(--accent),var(--accent2));padding:3px;border-radius:50%;display:inline-block;box-shadow:0 8px 32px rgba(0,0,0,0.5);width:112px;height:112px;">
-               <img src="{{ user.profile_picture or url_for('static', filename='profile_pictures/default_profile_picture.jpg') }}"
-                    class="profile-avatar-inner"
-                    style="width:106px;height:106px;border-radius:50%;object-fit:cover;object-position:center;display:block;"
-                    alt="{{ user.name }}">
-            </div>
+          <div style="background:linear-gradient(135deg,var(--accent),var(--accent2));padding:3px;border-radius:50%;display:inline-block;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+            <img src="{{ user.profile_picture or url_for('static', filename='profile_pictures/default_profile_picture.jpg') }}"
+                 class="profile-avatar-inner" width="106" height="106" alt="{{ user.name }}">
+          </div>
+          {% if user.is_online %}
+          <span style="position:absolute;bottom:6px;right:6px;width:14px;height:14px;background:#00e676;border-radius:50%;border:3px solid var(--bg);"></span>
+          {% endif %}
+        </div>
         <div style="padding-bottom:8px;">
           <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:3px;">{{ user.name }}</h1>
           <div style="color:var(--muted);font-size:0.875rem;">@{{ user.username }}
@@ -153,7 +164,7 @@
     <!-- Edit form (collapsible) -->
     <div id="edit-form" class="edit-form" style="margin-top:24px;padding-top:24px;border-top:1px solid var(--border);">
       <form method="POST" action="/profile/update" enctype="multipart/form-data">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px;">
           <div>
             <label>Display Name</label>
             <input class="input" type="text" name="name" value="{{ user.name }}">
@@ -250,10 +261,9 @@
       {% for field in interest_fields %}
         {% set val = interests[field] if interests[field] is defined else getattr(interests, field, 0) %}
         {% if val and val > 0 %}
-        {% set level_width = (val / 5 * 100)|int %}
         <div class="interest-chip">
           {{ field.capitalize() }}
-          <div class="level-bar"><div class="level-fill" style="width: {{ level_width }}%"></div></div>
+          <div class="level-bar"><div class="level-fill" style="width:{{ (val / 5 * 100)|int }}%;"></div></div>
         </div>
         {% endif %}
       {% endfor %}
@@ -282,7 +292,7 @@
             <div style="font-weight:600;font-size:0.875rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ rec.name }}</div>
             <div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px;">{{ rec.get('reason','Similar interests') }}</div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-              <div class="score-bar-track" style="flex:1;"><div class="score-bar-fill" style="width: {{ rec.score }}%;"></div></div>
+              <div class="score-bar-track" style="flex:1;"><div class="score-bar-fill" style="width:{{ rec.score }}%;"></div></div>
               <span style="font-size:0.75rem;color:var(--accent);font-weight:600;">{{ rec.score }}%</span>
             </div>
             <button class="btn-primary btn-sm" data-action="send-request" data-id="{{ rec.id }}" style="width:100%;">+ Add</button>
@@ -365,6 +375,14 @@
   {% endif %}
 
 </div>
+  @media (max-width: 768px) {
+    .profile-avatar-wrap { margin-left: 16px; }
+    .profile-avatar { width: 80px !important; height: 80px !important; }
+    .stat-box { padding: 12px 10px; }
+    .stat-num { font-size: 1.3rem; }
+    .cover-area { height: 140px !important; }
+    .tab-btn { padding: 7px 12px; font-size: 0.78rem; }
+  }
 {% endblock %}
 
 {% block extra_scripts %}
@@ -390,4 +408,12 @@ window.addEventListener('load', () => {
   });
 });
 </script>
+  @media (max-width: 768px) {
+    .profile-avatar-wrap { margin-left: 16px; }
+    .profile-avatar { width: 80px !important; height: 80px !important; }
+    .stat-box { padding: 12px 10px; }
+    .stat-num { font-size: 1.3rem; }
+    .cover-area { height: 140px !important; }
+    .tab-btn { padding: 7px 12px; font-size: 0.78rem; }
+  }
 {% endblock %}

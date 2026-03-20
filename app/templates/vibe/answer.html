@@ -1,5 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Answer Vibe Check — FriendSync{% endblock %}
+{% block title %}Answer Vibe Check — FriendSync  @media (max-width: 768px) {
+    .option-row { gap: 8px; }
+    .option-inner { padding: 12px 8px; }
+    .option-inner .opt-emoji { font-size: 1.5rem; }
+    .q-text { font-size: 0.95rem; }
+  }
+{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -69,6 +75,12 @@
   .dot.active { background: var(--accent); }
   .dot.done   { background: var(--accent2); }
 </style>
+  @media (max-width: 768px) {
+    .option-row { gap: 8px; }
+    .option-inner { padding: 12px 8px; }
+    .option-inner .opt-emoji { font-size: 1.5rem; }
+    .q-text { font-size: 0.95rem; }
+  }
 {% endblock %}
 
 {% block content %}
@@ -131,6 +143,12 @@
   </div>
 
 </div>
+  @media (max-width: 768px) {
+    .option-row { gap: 8px; }
+    .option-inner { padding: 12px 8px; }
+    .option-inner .opt-emoji { font-size: 1.5rem; }
+    .q-text { font-size: 0.95rem; }
+  }
 {% endblock %}
 
 {% block extra_scripts %}
@@ -168,4 +186,10 @@ document.getElementById('vibe-form').addEventListener('submit', function(e) {
   btn.disabled = true;
 });
 </script>
+  @media (max-width: 768px) {
+    .option-row { gap: 8px; }
+    .option-inner { padding: 12px 8px; }
+    .option-inner .opt-emoji { font-size: 1.5rem; }
+    .q-text { font-size: 0.95rem; }
+  }
 {% endblock %}

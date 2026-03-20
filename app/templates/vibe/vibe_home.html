@@ -4,7 +4,7 @@
 {% block extra_head %}
 <style>
   .vibe-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  @media(max-width:640px) { .vibe-grid { grid-template-columns: 1fr; } }
+  @media(max-width:700px) { .vibe-grid { grid-template-columns: 1fr; } }
 
   .suggest-card {
     background: var(--card-bg); border: 1px solid var(--border);
@@ -56,6 +56,11 @@
   .badge-count {
     margin-left:auto; background:var(--accent2); color:#fff;
     padding:2px 8px; border-radius:999px; font-size:0.68rem;
+  }
+  @media (max-width: 768px) {
+    .suggest-card, .pending-card { padding: 12px; }
+    .sug-av, .ghost-av { width: 38px; height: 38px; font-size: 0.9rem; }
+    .section-head { font-size: 0.75rem; }
   }
 </style>
 {% endblock %}

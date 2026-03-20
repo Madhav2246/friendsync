@@ -1,5 +1,13 @@
 {% extends "base.html" %}
-{% block title %}This or That — FriendSync{% endblock %}
+{% block title %}This or That — FriendSync  @media (max-width: 768px) {
+    .swipe-page { padding: 0 4px; }
+    .choice-btn { padding: 20px 10px; }
+    .choice-btn .emoji { font-size: 2rem; }
+    .choice-btn .clabel { font-size: 0.82rem; }
+    .tap-btn-a, .tap-btn-b { padding: 11px 8px; font-size: 0.78rem; }
+    .card-stack { height: 340px; }
+  }
+{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -134,6 +142,14 @@
   .fly-left  { animation:flyLeft  0.3s ease forwards; }
   .fly-right { animation:flyRight 0.3s ease forwards; }
 </style>
+  @media (max-width: 768px) {
+    .swipe-page { padding: 0 4px; }
+    .choice-btn { padding: 20px 10px; }
+    .choice-btn .emoji { font-size: 2rem; }
+    .choice-btn .clabel { font-size: 0.82rem; }
+    .tap-btn-a, .tap-btn-b { padding: 11px 8px; font-size: 0.78rem; }
+    .card-stack { height: 340px; }
+  }
 {% endblock %}
 
 {% block content %}
@@ -182,6 +198,14 @@
     <button onclick="closeMilestone()" class="btn-secondary btn-sm" style="flex:1;">Keep Swiping</button>
   </div>
 </div>
+  @media (max-width: 768px) {
+    .swipe-page { padding: 0 4px; }
+    .choice-btn { padding: 20px 10px; }
+    .choice-btn .emoji { font-size: 2rem; }
+    .choice-btn .clabel { font-size: 0.82rem; }
+    .tap-btn-a, .tap-btn-b { padding: 11px 8px; font-size: 0.78rem; }
+    .card-stack { height: 340px; }
+  }
 {% endblock %}
 
 {% block extra_scripts %}
@@ -377,4 +401,12 @@ async function resetAndPlay() {
 // ── Start ─────────────────────────────────────────────────
 renderCard();
 </script>
+  @media (max-width: 768px) {
+    .swipe-page { padding: 0 4px; }
+    .choice-btn { padding: 20px 10px; }
+    .choice-btn .emoji { font-size: 2rem; }
+    .choice-btn .clabel { font-size: 0.82rem; }
+    .tap-btn-a, .tap-btn-b { padding: 11px 8px; font-size: 0.78rem; }
+    .card-stack { height: 340px; }
+  }
 {% endblock %}
