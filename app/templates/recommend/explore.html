@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}Explore — FriendSync{% endblock %}
+
+{% block extra_head %}
+<style>
+  .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; align-items: center; }
+  .method-btn {
+    padding: 8px 18px; border-radius: 10px; font-size: 0.83rem; font-weight: 500;
+    cursor: pointer; border: 1px solid var(--border); background: transparent;
+    color: var(--muted); font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+  }
+  .method-btn.active { background: rgba(108,99,255,0.15); color: var(--text); border-color: rgba(108,99,255,0.4); }
+  .category-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .category-scroll::-webkit-scrollbar { height: 3px; }
+  .cat-btn {
+    white-space: nowrap; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem;
+    cursor: pointer; border: 1px solid var(--border); background: transparent;
+    color: var(--muted); font-family: 'DM Sans', sans-serif; transition: all 0.2s; flex-shrink: 0;
+  }
+  .cat-btn.active { background: rgba(255,107,157,0.15); color: var(--accent2); border-color: rgba(255,107,157,0.4); }
+  .rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .rec-card {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px;
+    padding: 22px; transition: all 0.25s; position: relative; overflow: hidden;
+  }
+  .rec-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transform: scaleX(0); transition: transform 0.3s; transform-origin: left;
+  }
+  .rec-card:hover { border-color: rgba(108,99,255,0.4); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+  .rec-card:hover::before { transform: scaleX(1); }
+  .rec-avatar-lg {
+    width: 56px; height: 56px; border-radius: 50%; object-fit: cover;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.3rem; color: #fff;
+    margin-bottom: 14px;
+  }
+  .match-badge {
+    position: absolute; top: 16px; right: 16px;
+    background: rgba(108,99,255,0.15); border: 1px solid rgba(108,99,255,0.3);
+    border-radius: 8px; padding: 4px 10px; font-size: 0.75rem;
+    color: var(--accent); font-weight: 600;
+  }
+  .loading-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .skeleton-card { height: 200px; border-radius: 18px; }
+  #empty-state { text-align: center; padding: 80px 20px; display: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:1000px;margin:0 auto;">
+  <div style="margin-bottom:28px;">
+    <h1 style="font-size:1.75rem;font-weight:800;margin-bottom:6px;">Explore People</h1>
+    <p style="color:var(--muted);font-size:0.875rem;">Discover your next connection using AI-powered matching</p>
+  </div>
+
+  <!-- Method selector -->
+  <div class="filter-bar">
+    <span style="font-size:0.8rem;color:var(--muted);font-weight:500;">Algorithm:</span>
+    <button class="method-btn {% if selected_method == 'hybrid' or not selected_method %}active{% endif %}"
+            onclick="setMethod('hybrid')">🤖 AI Hybrid</button>
+    <button class="method-btn {% if selected_method == 'mutual' %}active{% endif %}"
+            onclick="setMethod('mutual')">👥 Mutual Friends</button>
+    <button class="method-btn {% if selected_method == 'dijkstra' %}active{% endif %}"
+            onclick="setMethod('dijkstra')">🗺 Category Match</button>
+  </div>
+
+  <!-- Category filter (shown for dijkstra) -->
+  <div id="category-section" style="margin-bottom:20px;{% if selected_method != 'dijkstra' %}display:none;{% endif %}">
+    <div style="font-size:0.8rem;color:var(--muted);font-weight:500;margin-bottom:8px;">Filter by category:</div>
+    <div class="category-scroll">
+      {% set cat_icons = {'sports':'🏅','movies':'🎬','dance':'💃','songs':'🎵','education':'📚','travel':'✈️','books':'📖','cooking':'🍳','art':'🎨','gaming':'🎮','fitness':'💪','technology':'💻'} %}
+      {% for cat in categories %}
+      <button class="cat-btn {% if selected_category == cat %}active{% endif %}"
+              onclick="setCategory('{{ cat }}')">
+        {{ cat_icons.get(cat, '⭐') }} {{ cat.capitalize() }}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="results-area">
+    {% if recommendations %}
+    <div class="rec-grid" id="rec-grid">
+      {% for rec in recommendations %}
+      <div class="rec-card">
+        <div class="match-badge">{{ rec.score }}% match</div>
+        <div class="rec-avatar-lg">{{ rec.name[0] }}</div>
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:3px;">{{ rec.name }}</h3>
+        <div style="color:var(--muted);font-size:0.78rem;margin-bottom:10px;">@{{ rec.username }}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
+          <svg width="12" height="12" fill="none" stroke="var(--accent2)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span style="font-size:0.78rem;color:var(--muted);">{{ rec.reason }}</span>
+        </div>
+        <div class="score-bar-track" style="margin-bottom:14px;">
+          <div class="score-bar-fill" style="width:{{ rec.score }}%;"></div>
+        </div>
+        {% if rec.is_friend %}
+          <div style="display:flex;gap:8px;">
+            <a href="/chat/{{ rec.id }}" class="btn-primary btn-sm" style="text-decoration:none;flex:1;justify-content:center;">
+              💬 Message
+            </a>
+            <a href="/profile/{{ rec.username }}" class="btn-secondary btn-sm" style="text-decoration:none;">View</a>
+          </div>
+        {% else %}
+          <div style="display:flex;gap:8px;">
+            <button class="btn-primary btn-sm" data-action="send-request" data-id="{{ rec.id }}" style="flex:1;">
+              + Add Friend
+            </button>
+            <a href="/profile/{{ rec.username }}" class="btn-secondary btn-sm" style="text-decoration:none;">View</a>
+          </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div id="empty-state" style="display:block;">
+      <div style="font-size:3rem;margin-bottom:16px;">🔍</div>
+      <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:8px;">No recommendations found</h3>
+      <p style="color:var(--muted);font-size:0.875rem;max-width:300px;margin:0 auto 20px;">
+        Try a different algorithm or <a href="/profile/interests" style="color:var(--accent);">update your interests</a> to get better matches.
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Loading skeletons (hidden by default) -->
+  <div id="loading-state" style="display:none;">
+    <div class="loading-grid">
+      {% for i in range(6) %}
+      <div class="skeleton skeleton-card"></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let currentMethod = '{{ selected_method or "hybrid" }}';
+let currentCategory = '{{ selected_category or "" }}';
+
+function setMethod(method) {
+  currentMethod = method;
+  document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('category-section').style.display = method === 'dijkstra' ? 'block' : 'none';
+  if (method !== 'dijkstra') fetchRecs();
+}
+
+function setCategory(cat) {
+  currentCategory = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  fetchRecs();
+}
+
+async function fetchRecs() {
+  const loading = document.getElementById('loading-state');
+  const results = document.getElementById('results-area');
+  loading.style.display = 'block';
+  results.style.display = 'none';
+
+  let url = `/recommend/explore?method=${currentMethod}`;
+  if (currentCategory) url += `&category=${currentCategory}`;
+
+  try {
+    const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    const data = await res.json();
+    loading.style.display = 'none';
+    results.style.display = 'block';
+    renderRecs(data.recommendations || []);
+  } catch {
+    loading.style.display = 'none';
+    results.style.display = 'block';
+  }
+}
+
+function renderRecs(recs) {
+  const grid = document.getElementById('rec-grid');
+  const empty = document.getElementById('empty-state');
+  if (!recs.length) {
+    if (grid) grid.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  const html = recs.map(rec => `
+    <div class="rec-card">
+      <div class="match-badge">${rec.score}% match</div>
+      <div class="rec-avatar-lg">${rec.name[0]}</div>
+      <h3 style="font-size:1rem;font-weight:700;margin-bottom:3px;">${rec.name}</h3>
+      <div style="color:var(--muted);font-size:0.78rem;margin-bottom:10px;">@${rec.username}</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">${rec.reason || ''}</div>
+      <div class="score-bar-track" style="margin-bottom:14px;">
+        <div class="score-bar-fill" style="width:${rec.score}%;"></div>
+      </div>
+      <button class="btn-primary btn-sm" data-action="send-request" data-id="${rec.id}" style="width:100%;">+ Add Friend</button>
+    </div>
+  `).join('');
+  if (!grid) {
+    results.innerHTML = `<div class="rec-grid" id="rec-grid">${html}</div>`;
+  } else {
+    grid.innerHTML = html;
+  }
+  // Animate bars
+  setTimeout(() => {
+    document.querySelectorAll('.score-bar-fill').forEach(bar => {
+      const w = bar.style.width; bar.style.width = '0%';
+      setTimeout(() => bar.style.width = w, 50);
+    });
+  }, 50);
+}
+
+// Animate on load
+window.addEventListener('load', () => {
+  document.querySelectorAll('.score-bar-fill').forEach(bar => {
+    const w = bar.style.width; bar.style.width = '0%';
+    setTimeout(() => bar.style.width = w, 200);
+  });
+});
+</script>
+{% endblock %}

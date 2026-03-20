@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}Vibe Check — FriendSync{% endblock %}
+
+{% block extra_head %}
+<style>
+  .vibe-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media(max-width:640px) { .vibe-grid { grid-template-columns: 1fr; } }
+
+  .suggest-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 16px; padding: 16px;
+    display: flex; align-items: center; gap: 12px;
+    transition: all 0.2s; margin-bottom: 10px;
+  }
+  .suggest-card:hover { border-color: rgba(108,99,255,0.35); transform: translateY(-2px); }
+
+  .sug-av {
+    width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne',sans-serif; font-weight: 700; font-size: 1rem; color: #fff;
+    overflow: hidden;
+  }
+  .sug-av img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+
+  .pending-card {
+    background: linear-gradient(135deg, rgba(108,99,255,0.1), rgba(255,107,157,0.06));
+    border: 1px solid rgba(108,99,255,0.3); border-radius: 16px; padding: 16px;
+    display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+    animation: pulse-border 2s infinite;
+  }
+  @keyframes pulse-border {
+    0%,100% { border-color: rgba(108,99,255,0.3); }
+    50%      { border-color: rgba(108,99,255,0.7); }
+  }
+  .ghost-av {
+    width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(108,99,255,0.15); border: 1px solid rgba(108,99,255,0.3);
+    display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+  }
+
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 600;
+  }
+  .sp-pending   { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .sp-waiting   { background: rgba(59,130,246,0.15);  color: #3b82f6; }
+  .sp-matched   { background: rgba(0,230,118,0.15);   color: #00e676; }
+  .sp-unmatched { background: rgba(239,68,68,0.15);   color: #ef4444; }
+
+  .section-head {
+    font-family:'Syne',sans-serif; font-size:0.82rem; font-weight:700;
+    color:var(--muted); letter-spacing:0.5px; text-transform:uppercase;
+    margin-bottom:14px; display:flex; align-items:center; gap:8px;
+  }
+  .badge-count {
+    margin-left:auto; background:var(--accent2); color:#fff;
+    padding:2px 8px; border-radius:999px; font-size:0.68rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:900px;margin:0 auto;">
+
+  <div style="text-align:center;margin-bottom:28px;">
+    <div style="font-size:2.2rem;margin-bottom:8px;">👻</div>
+    <h1 style="font-size:1.6rem;font-weight:800;margin-bottom:6px;">Vibe Check</h1>
+    <p style="color:var(--muted);font-size:0.82rem;max-width:400px;margin:0 auto;">
+      Answer 3 anonymous questions with a stranger. Match 2 out of 3 — profiles reveal!
+    </p>
+  </div>
+
+  {% if my_pending %}
+  <div class="card" style="margin-bottom:20px;border-color:rgba(108,99,255,0.3);">
+    <div class="section-head">
+      <span>⚡</span> Waiting for your answers
+      <span class="badge-count">{{ my_pending|length }}</span>
+    </div>
+    {% for vc, other_user, direction in my_pending %}
+    <div class="pending-card">
+      <div class="ghost-av">👻</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:600;font-size:0.875rem;">
+          {% if direction == 'received' %}
+            An anonymous stranger wants to vibe check you!
+          {% else %}
+            You sent a vibe check — now answer your own questions too!
+          {% endif %}
+        </div>
+        <div style="color:var(--muted);font-size:0.75rem;margin-top:3px;">
+          {{ vc.created_at.strftime('%b %d, %I:%M %p') }}
+        </div>
+      </div>
+      <a href="/vibe/answer/{{ vc.id }}" class="btn-primary btn-sm"
+         style="text-decoration:none;white-space:nowrap;flex-shrink:0;">
+        Answer 👻
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="vibe-grid">
+
+    <div>
+      <div class="section-head">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+        </svg>
+        Send a Vibe Check
+      </div>
+
+      {% if suggestions %}
+        {% for person in suggestions %}
+        <div class="suggest-card">
+          <div class="sug-av">
+            {% if person.profile_picture %}
+              <img src="{{ person.profile_picture }}" alt="{{ person.name }}">
+            {% else %}
+              {{ person.name[0] }}
+            {% endif %}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:0.875rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              {{ person.name }}
+            </div>
+            <div style="color:var(--muted);font-size:0.73rem;">@{{ person.username }}</div>
+          </div>
+          <a href="/vibe/send/{{ person.id }}"
+             class="btn-primary btn-sm"
+             style="flex-shrink:0;white-space:nowrap;text-decoration:none;">
+            👻 Check
+          </a>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center;padding:36px;color:var(--muted);">
+          <div style="font-size:1.8rem;margin-bottom:8px;">🔍</div>
+          <div style="font-size:0.82rem;">No new people to check right now.</div>
+          <a href="/recommend/explore" style="color:var(--accent);font-size:0.78rem;">Explore more →</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <div>
+      <div class="section-head">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        Vibe Check History
+      </div>
+
+      {% if all_checks %}
+        {% for vc, other, my_ans, other_ans, direction in all_checks %}
+        <div style="display:flex;align-items:center;gap:11px;padding:13px;
+                    background:var(--card-bg);border:1px solid var(--border);
+                    border-radius:14px;margin-bottom:8px;">
+          <div class="ghost-av" style="width:38px;height:38px;font-size:1rem;">
+            {% if vc.status == 'matched' %}😊
+            {% elif vc.status == 'unmatched' %}👻
+            {% else %}⏳{% endif %}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:0.85rem;">
+              {% if vc.status == 'matched' and other %}{{ other.name }}
+              {% else %}Anonymous{% endif %}
+            </div>
+            <div style="margin-top:3px;">
+              {% if vc.status == 'pending' %}<span class="status-pill sp-pending">⏳ Awaiting answers</span>
+              {% elif vc.status == 'waiting' %}<span class="status-pill sp-waiting">⏳ Waiting for other person</span>
+              {% elif vc.status == 'matched' %}<span class="status-pill sp-matched">✓ Matched!</span>
+              {% elif vc.status == 'unmatched' %}<span class="status-pill sp-unmatched">✗ No match</span>
+              {% endif %}
+            </div>
+          </div>
+          <div>
+            {% if not my_ans %}
+              <a href="/vibe/answer/{{ vc.id }}"
+                 style="color:var(--accent2);font-size:0.75rem;font-weight:600;text-decoration:none;">
+                Answer →
+              </a>
+            {% elif vc.status in ['matched','unmatched'] %}
+              <a href="/vibe/result/{{ vc.id }}"
+                 style="color:var(--accent);font-size:0.75rem;text-decoration:none;">
+                View →
+              </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center;padding:36px;color:var(--muted);">
+          <div style="font-size:1.8rem;margin-bottom:8px;">📭</div>
+          <div style="font-size:0.82rem;">No vibe checks yet.</div>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <div class="section-head">How Vibe Check Works</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;">
+      {% for icon, title, desc in [
+        ('👻', 'Send anonymously',  "Pick someone — they won't know it's you"),
+        ('❓', 'Both answer',        'You and them answer the same 3 questions independently'),
+        ('🎯', 'Match 2 out of 3',   'Score 2+ and profiles reveal automatically'),
+        ('🎉', 'Auto connect!',      'A friend request is sent if you match'),
+      ] %}
+      <div style="text-align:center;padding:14px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
+        <div style="font-size:1.5rem;margin-bottom:7px;">{{ icon }}</div>
+        <div style="font-weight:700;font-size:0.82rem;margin-bottom:4px;">{{ title }}</div>
+        <div style="font-size:0.73rem;color:var(--muted);line-height:1.5;">{{ desc }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

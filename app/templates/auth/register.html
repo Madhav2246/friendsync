@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register — FriendSync</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#0a0a0f;--surface:#111118;--border:#1e1e2e;--accent:#6c63ff;--accent2:#ff6b9d;--text:#e8e8f0;--muted:#5a5a7a; }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px;}
+    h1,h2{font-family:'Syne',sans-serif;}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:44px 48px;width:100%;max-width:520px;}
+    .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:block;margin-bottom:6px;}
+    .form-title{font-size:1.5rem;font-weight:700;margin-bottom:4px;}
+    .form-subtitle{color:var(--muted);font-size:0.875rem;margin-bottom:32px;}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .form-group{margin-bottom:18px;}
+    label{display:block;font-size:0.8rem;font-weight:500;color:var(--muted);margin-bottom:6px;}
+    .input-wrap{position:relative;}
+    .input-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;}
+    input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:11px 16px 11px 42px;border-radius:10px;font-size:0.875rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
+    input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,0.12);}
+    input::placeholder{color:var(--muted);}
+    .avatar-upload{border:2px dashed var(--border);border-radius:14px;padding:24px;text-align:center;cursor:pointer;transition:border-color 0.2s;position:relative;}
+    .avatar-upload:hover{border-color:var(--accent);}
+    .avatar-upload input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+    .avatar-preview{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);display:none;margin:0 auto 8px;}
+    .btn-submit{width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff;border:none;border-radius:10px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;margin-top:4px;}
+    .btn-submit:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(108,99,255,0.4);}
+    .password-strength{height:4px;border-radius:999px;background:var(--border);margin-top:8px;overflow:hidden;}
+    .strength-fill{height:100%;border-radius:999px;transition:width 0.3s,background 0.3s;width:0%;}
+    .strength-text{font-size:0.72rem;color:var(--muted);margin-top:4px;text-align:right;}
+    .flash{padding:10px 14px;border-radius:9px;font-size:0.83rem;margin-bottom:16px;}
+    .flash.error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#ef4444;}
+    .flash.success{background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.25);color:#00e676;}
+    .form-footer{text-align:center;margin-top:24px;color:var(--muted);font-size:0.875rem;}
+    .form-footer a{color:var(--accent);text-decoration:none;font-weight:500;}
+    .pw-toggle{position:absolute;right:13px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--muted);background:none;border:none;display:flex;align-items:center;}
+    @media(max-width:480px){.row{grid-template-columns:1fr;}.card{padding:32px 24px;}}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="logo">FriendSync</span>
+    <h1 class="form-title">Create your account</h1>
+    <p class="form-subtitle">Join thousands finding real connections</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for cat,msg in messages %}
+        <div class="flash {{cat}}">{{msg}}</div>
+      {% endfor %}{% endif %}
+    {% endwith %}
+
+    <form method="POST" action="/auth/register" enctype="multipart/form-data">
+      <div class="row">
+        <div class="form-group">
+          <label>Full Name</label>
+          <div class="input-wrap">
+            <span class="input-icon"><svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></span>
+            <input type="text" name="name" placeholder="Jane Doe" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Username</label>
+          <div class="input-wrap">
+            <span class="input-icon"><svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg></span>
+            <input type="text" name="username" placeholder="jane_doe" required autocomplete="username">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Email Address</label>
+        <div class="input-wrap">
+          <span class="input-icon"><svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></span>
+          <input type="email" name="email" placeholder="jane@email.com" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <div class="input-wrap">
+          <span class="input-icon"><svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span>
+          <input type="password" id="password" name="password" placeholder="Min. 8 characters" required oninput="checkStrength(this.value)">
+          <button type="button" class="pw-toggle" onclick="document.getElementById('password').type = document.getElementById('password').type==='password'?'text':'password'">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+          </button>
+        </div>
+        <div class="password-strength"><div class="strength-fill" id="strength-fill"></div></div>
+        <div class="strength-text" id="strength-text"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Profile Picture (optional)</label>
+        <div class="avatar-upload" id="upload-zone">
+          <input type="file" name="profile_picture" accept="image/*" onchange="previewImage(this)">
+          <img class="avatar-preview" id="avatar-preview" src="" alt="">
+          <div id="upload-hint">
+            <svg width="32" height="32" fill="none" stroke="var(--muted)" viewBox="0 0 24 24" style="margin:0 auto 8px;display:block;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <div style="color:var(--muted);font-size:0.82rem;">Click or drag to upload</div>
+            <div style="color:#3a3a5a;font-size:0.75rem;margin-top:4px;">PNG, JPG, GIF up to 5MB</div>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit">Create Account →</button>
+    </form>
+
+    <div class="form-footer">Already have an account? <a href="/auth/login">Sign in</a></div>
+  </div>
+
+<script>
+function checkStrength(pw) {
+  const fill = document.getElementById('strength-fill');
+  const text = document.getElementById('strength-text');
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^a-zA-Z0-9]/.test(pw)) score++;
+  const levels = [
+    {w:'0%', c:'transparent', t:''},
+    {w:'25%', c:'#ef4444', t:'Weak'},
+    {w:'50%', c:'#f59e0b', t:'Fair'},
+    {w:'75%', c:'#3b82f6', t:'Good'},
+    {w:'100%', c:'#00e676', t:'Strong'},
+  ];
+  const l = levels[score];
+  fill.style.width = l.w; fill.style.background = l.c; text.textContent = l.t;
+}
+function previewImage(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const preview = document.getElementById('avatar-preview');
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+      document.getElementById('upload-hint').style.display = 'none';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+</script>
+</body>
+</html>

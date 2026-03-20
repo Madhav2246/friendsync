@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Answer Vibe Check — FriendSync{% endblock %}
+
+{% block extra_head %}
+<style>
+  .answer-page { max-width: 480px; margin: 0 auto; }
+
+  .question-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 20px; padding: 28px; margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+  .question-card.answered { border-color: rgba(108,99,255,0.4); }
+
+  .q-number {
+    font-size: 0.72rem; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
+  }
+  .q-text {
+    font-size: 1.05rem; font-weight: 700; margin-bottom: 20px; line-height: 1.4;
+  }
+
+  .option-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .option-label {
+    display: block; cursor: pointer;
+  }
+  .option-label input { display: none; }
+  .option-inner {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 8px; padding: 16px 10px; border-radius: 14px;
+    border: 2px solid var(--border); background: var(--bg);
+    font-size: 0.875rem; font-weight: 600; text-align: center;
+    transition: all 0.15s; line-height: 1.3;
+  }
+  .option-inner .opt-emoji { font-size: 1.8rem; }
+  .option-label:hover .option-inner {
+    border-color: rgba(108,99,255,0.4);
+    background: rgba(108,99,255,0.05);
+  }
+  .option-label input:checked + .option-inner {
+    border-color: var(--accent);
+    background: rgba(108,99,255,0.12);
+    color: var(--accent);
+  }
+
+  .submit-btn {
+    width: 100%; padding: 15px; border-radius: 14px;
+    font-size: 1rem; font-weight: 700; cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; border: none; margin-top: 8px;
+    transition: all 0.2s; opacity: 0.45; pointer-events: none;
+  }
+  .submit-btn.ready { opacity: 1; pointer-events: all; }
+  .submit-btn.ready:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(108,99,255,0.4); }
+
+  .anon-banner {
+    background: rgba(108,99,255,0.08); border: 1px solid rgba(108,99,255,0.2);
+    border-radius: 12px; padding: 12px 16px; margin-bottom: 24px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 0.8rem; color: var(--muted);
+  }
+
+  .progress-dots { display: flex; gap: 8px; justify-content: center; margin-bottom: 28px; }
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--border); transition: background 0.2s;
+  }
+  .dot.active { background: var(--accent); }
+  .dot.done   { background: var(--accent2); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="answer-page">
+
+  <!-- Header -->
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:2.2rem;margin-bottom:8px;">👻</div>
+    <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:6px;">Vibe Check</h1>
+    <p style="color:var(--muted);font-size:0.82rem;">Answer honestly — the other person answers the same questions independently.</p>
+  </div>
+
+  <!-- Anonymous reminder -->
+  <div class="anon-banner">
+    <span style="font-size:1.1rem;">🔒</span>
+    <span>Your identity is <strong style="color:var(--text);">completely hidden</strong> until you both match on 2+ answers.</span>
+  </div>
+
+  <!-- Progress dots -->
+  <div class="progress-dots">
+    {% for q in questions %}
+    <div class="dot" id="dot-{{ loop.index0 }}"></div>
+    {% endfor %}
+  </div>
+
+  <!-- Questions form -->
+  <form method="POST" action="/vibe/answer/{{ vc.id }}" id="vibe-form">
+    {% for q in questions %}
+    <div class="question-card" id="qcard-{{ loop.index0 }}">
+      <div class="q-number">Question {{ loop.index }} of {{ questions|length }}</div>
+      <div class="q-text">{{ q.text }}</div>
+      <div class="option-row">
+        <label class="option-label">
+          <input type="radio" name="{{ 'q' ~ loop.index }}" value="a"
+                 onchange="onPick({{ loop.index0 }})">
+          <div class="option-inner">
+            <span class="opt-emoji">{{ q.a.split(' ')[0] }}</span>
+            <span>{{ q.a.split(' ')[1:] | join(' ') }}</span>
+          </div>
+        </label>
+        <label class="option-label">
+          <input type="radio" name="{{ 'q' ~ loop.index }}" value="b"
+                 onchange="onPick({{ loop.index0 }})">
+          <div class="option-inner">
+            <span class="opt-emoji">{{ q.b.split(' ')[0] }}</span>
+            <span>{{ q.b.split(' ')[1:] | join(' ') }}</span>
+          </div>
+        </label>
+      </div>
+    </div>
+    {% endfor %}
+
+    <button type="submit" class="submit-btn" id="submit-btn">
+      Submit Answers 👻
+    </button>
+  </form>
+
+  <div style="text-align:center;margin-top:16px;">
+    <a href="/vibe/" style="color:var(--muted);font-size:0.78rem;text-decoration:none;">← Back to Vibe Check</a>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const total    = {{ questions | length }};
+const answered = new Set();
+
+function onPick(idx) {
+  answered.add(idx);
+  // Mark card
+  document.getElementById('qcard-' + idx).classList.add('answered');
+  // Mark dot
+  const dot = document.getElementById('dot-' + idx);
+  dot.classList.remove('active');
+  dot.classList.add('done');
+  // Activate next dot
+  const next = document.getElementById('dot-' + (idx + 1));
+  if (next) { next.classList.add('active'); }
+  // Enable submit when all answered
+  if (answered.size === total) {
+    document.getElementById('submit-btn').classList.add('ready');
+  }
+}
+
+// Activate first dot on load
+const firstDot = document.getElementById('dot-0');
+if (firstDot) firstDot.classList.add('active');
+
+// Prevent double submit
+document.getElementById('vibe-form').addEventListener('submit', function(e) {
+  const btn = document.getElementById('submit-btn');
+  if (answered.size < total) { e.preventDefault(); return; }
+  btn.textContent = '⏳ Submitting...';
+  btn.style.opacity = '0.7';
+  btn.disabled = true;
+});
+</script>
+{% endblock %}

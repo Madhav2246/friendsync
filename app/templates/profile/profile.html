@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+{% block title %}{{ user.name }} — FriendSync{% endblock %}
+
+{% block extra_head %}
+<style>
+  .cover-area {
+    height: 200px; border-radius: 18px; overflow: hidden; position: relative; margin-bottom: 0;
+    background: linear-gradient(135deg, #1a0a2e 0%, #0d1a3e 50%, #1a1a0a 100%);
+  }
+  .cover-area::after {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 50%, rgba(108,99,255,0.3) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 30%, rgba(255,107,157,0.2) 0%, transparent 50%);
+  }
+  .cover-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(108,99,255,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(108,99,255,0.08) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .profile-avatar-wrap {
+    position: relative; margin-top: -56px; margin-left: 32px;
+    display: inline-block; z-index: 10;
+  }
+  .profile-avatar {
+    width: 112px; height: 112px; border-radius: 50%; object-fit: cover;
+    border: 4px solid var(--bg);
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    padding: 3px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .profile-avatar-inner {
+    width: 106px;
+    height: 106px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+    background: var(--surface);
+  }
+  .stat-box {
+    text-align: center; padding: 16px 24px;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px;
+    flex: 1;
+  }
+  .stat-num { font-family: 'Syne', sans-serif; font-size: 1.75rem; font-weight: 800; }
+  .stat-label { color: var(--muted); font-size: 0.78rem; margin-top: 2px; }
+  .interest-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.2);
+    border-radius: 10px; padding: 6px 12px; font-size: 0.8rem;
+    color: var(--text); transition: all 0.2s;
+  }
+  .interest-chip:hover { background: rgba(108,99,255,0.2); border-color: rgba(108,99,255,0.4); }
+  .interest-chip .level-bar {
+    width: 30px; height: 4px; background: var(--border); border-radius: 999px; overflow: hidden;
+  }
+  .interest-chip .level-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 999px;
+  }
+  .rec-card {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+    padding: 18px; transition: all 0.2s; cursor: default;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .rec-card:hover { border-color: rgba(108,99,255,0.35); transform: translateY(-2px); }
+  .rec-avatar {
+    width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    flex-shrink: 0; font-family:'Syne',sans-serif; font-weight:700;
+    display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;
+  }
+  .notif-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px; background: var(--bg); border-radius: 10px;
+    border: 1px solid var(--border); margin-bottom: 8px;
+  }
+  .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .section-title {
+    font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700;
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .edit-form { display: none; }
+  .edit-form.open { display: block; }
+  .tab-btn {
+    padding: 8px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 500;
+    cursor: pointer; border: 1px solid var(--border); background: transparent;
+    color: var(--muted); font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+  }
+  .tab-btn.active { background: rgba(108,99,255,0.15); color: var(--text); border-color: rgba(108,99,255,0.4); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .score-bar-track { background: var(--border); height: 4px; border-radius: 999px; overflow: hidden; }
+  .score-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 999px; transition: width 0.6s ease; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:900px;margin:0 auto;">
+
+  <!-- Cover -->
+  <div class="cover-area card" style="padding:0;border-radius:18px;margin-bottom:0;">
+    <div class="cover-grid"></div>
+  </div>
+
+  <!-- Profile header -->
+  <div class="card" style="border-radius:18px;margin-top:0;padding-bottom:24px;border-top-left-radius:0;border-top-right-radius:0;border-top:none;">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+      <div style="display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;">
+        <div class="profile-avatar-wrap">
+            <div style="background:linear-gradient(135deg,var(--accent),var(--accent2));padding:3px;border-radius:50%;display:inline-block;box-shadow:0 8px 32px rgba(0,0,0,0.5);width:112px;height:112px;">
+               <img src="{{ user.profile_picture or url_for('static', filename='profile_pictures/default_profile_picture.jpg') }}"
+                    class="profile-avatar-inner"
+                    style="width:106px;height:106px;border-radius:50%;object-fit:cover;object-position:center;display:block;"
+                    alt="{{ user.name }}">
+            </div>
+        <div style="padding-bottom:8px;">
+          <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:3px;">{{ user.name }}</h1>
+          <div style="color:var(--muted);font-size:0.875rem;">@{{ user.username }}
+            {% if user.location %} · 📍 {{ user.location }}{% endif %}
+          </div>
+          {% if user.bio %}
+          <div style="margin-top:8px;font-size:0.875rem;color:var(--text);max-width:400px;line-height:1.6;">{{ user.bio }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display:flex;gap:10px;align-items:center;padding-bottom:8px;flex-wrap:wrap;">
+        {% if is_own_profile %}
+          <button onclick="document.getElementById('edit-form').classList.toggle('open')" class="btn-secondary btn-sm">Edit Profile</button>
+          <a href="/profile/interests" class="btn-secondary btn-sm" style="text-decoration:none;">Update Interests</a>
+        {% elif is_friend %}
+          <a href="/chat/{{ user.id }}" class="btn-primary btn-sm" style="text-decoration:none;">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+            Message
+          </a>
+          <form action="/friends/remove/{{ user.id }}" method="post" style="margin:0;">
+            <button type="submit" class="btn-danger btn-sm">Unfollow</button>
+          </form>
+        {% elif pending_request %}
+          <button class="btn-secondary btn-sm" disabled>Request Pending</button>
+        {% else %}
+          <button class="btn-primary btn-sm" data-action="send-request" data-id="{{ user.id }}">
+            + Add Friend
+          </button>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Edit form (collapsible) -->
+    <div id="edit-form" class="edit-form" style="margin-top:24px;padding-top:24px;border-top:1px solid var(--border);">
+      <form method="POST" action="/profile/update" enctype="multipart/form-data">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+          <div>
+            <label>Display Name</label>
+            <input class="input" type="text" name="name" value="{{ user.name }}">
+          </div>
+          <div>
+            <label>Location</label>
+            <input class="input" type="text" name="location" value="{{ user.location or '' }}" placeholder="City, Country">
+          </div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label>Bio</label>
+          <textarea class="input" name="bio" rows="2" placeholder="Tell people about yourself..." style="resize:vertical;">{{ user.bio or '' }}</textarea>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label>Profile Picture</label>
+          <input class="input" type="file" name="profile_picture" accept="image/*" style="padding:8px;">
+        </div>
+        <button type="submit" class="btn-primary btn-sm">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Stats row -->
+  <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
+    <div class="stat-box">
+      <div class="stat-num gradient-text">{{ followers|length }}</div>
+      <div class="stat-label">Followers</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num gradient-text">{{ following|length }}</div>
+      <div class="stat-label">Following</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num gradient-text">{{ recommendations|length }}</div>
+      <div class="stat-label">AI Matches</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num gradient-text">{{ mutual_suggestions|length }}</div>
+      <div class="stat-label">Mutual Picks</div>
+    </div>
+  </div>
+
+  <!-- Notifications (own profile only) -->
+  {% if is_own_profile and notifications %}
+  <div class="card" style="margin-top:20px;">
+    <div class="section-title">
+      <svg width="16" height="16" fill="none" stroke="var(--accent)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      Notifications
+      <button onclick="markRead()" style="margin-left:auto;font-size:0.75rem;color:var(--muted);background:none;border:none;cursor:pointer;">Mark all read</button>
+    </div>
+    {% for notif in notifications %}
+    <div class="notif-item">
+      <span class="notif-dot"></span>
+      <span style="font-size:0.85rem;flex:1;">{{ notif.content }}</span>
+      <span style="font-size:0.72rem;color:var(--muted);">{{ notif.created_at.strftime('%b %d') }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Incoming friend requests -->
+  {% if is_own_profile and incoming_requests %}
+  <div class="card" style="margin-top:16px;">
+    <div class="section-title">
+      <svg width="16" height="16" fill="none" stroke="var(--accent2)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+      Friend Requests
+    </div>
+    {% for req, sender in incoming_requests %}
+    <div style="display:flex;align-items:center;gap:14px;padding:12px;background:var(--bg);border-radius:12px;margin-bottom:8px;border:1px solid var(--border);">
+      <div class="rec-avatar" style="width:40px;height:40px;font-size:0.9rem;">{{ sender.name[0] }}</div>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:0.875rem;">{{ sender.name }}</div>
+        <div style="color:var(--muted);font-size:0.78rem;">@{{ sender.username }}</div>
+      </div>
+      <form action="/friends/accept/{{ req.id }}" method="post" style="margin:0;">
+        <button type="submit" class="btn-primary btn-sm">Accept</button>
+      </form>
+      <form action="/friends/decline/{{ req.id }}" method="post" style="margin:0;">
+        <button type="submit" class="btn-secondary btn-sm">Decline</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Interests -->
+  {% if interests %}
+  <div class="card" style="margin-top:16px;">
+    <div class="section-title">
+      <svg width="16" height="16" fill="none" stroke="var(--accent)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+      Interests
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      {% for field in interest_fields %}
+        {% set val = interests[field] if interests[field] is defined else getattr(interests, field, 0) %}
+        {% if val and val > 0 %}
+        {% set level_width = (val / 5 * 100)|int %}
+        <div class="interest-chip">
+          {{ field.capitalize() }}
+          <div class="level-bar"><div class="level-fill" style="width: {{ level_width }}%"></div></div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Tabs: Recommendations + Mutuals -->
+  {% if is_own_profile %}
+  <div class="card" style="margin-top:16px;">
+    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+      <button class="tab-btn active" onclick="switchTab('ai')">🤖 AI Recommendations</button>
+      <button class="tab-btn" onclick="switchTab('mutual')">👥 Mutual Connections</button>
+      <button class="tab-btn" onclick="switchTab('following')">Following</button>
+      <button class="tab-btn" onclick="switchTab('followers')">Followers</button>
+    </div>
+
+    <!-- AI Recs -->
+    <div id="tab-ai" class="tab-panel active">
+      {% if recommendations %}
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;">
+        {% for rec in recommendations %}
+        <div class="rec-card">
+          <div class="rec-avatar">{{ rec.name[0] }}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:0.875rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ rec.name }}</div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px;">{{ rec.get('reason','Similar interests') }}</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <div class="score-bar-track" style="flex:1;"><div class="score-bar-fill" style="width: {{ rec.score }}%;"></div></div>
+              <span style="font-size:0.75rem;color:var(--accent);font-weight:600;">{{ rec.score }}%</span>
+            </div>
+            <button class="btn-primary btn-sm" data-action="send-request" data-id="{{ rec.id }}" style="width:100%;">+ Add</button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:40px;color:var(--muted);">
+        <div style="font-size:2rem;margin-bottom:8px;">🤖</div>
+        No recommendations yet. <a href="/profile/interests" style="color:var(--accent);">Add your interests</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Mutual suggestions -->
+    <div id="tab-mutual" class="tab-panel">
+      {% if mutual_suggestions %}
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;">
+        {% for sug in mutual_suggestions %}
+        <div class="rec-card">
+          <div class="rec-avatar">{{ sug.name[0] }}</div>
+          <div style="flex:1;">
+            <div style="font-weight:600;font-size:0.875rem;">{{ sug.name }}</div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px;">{{ sug.reason }}</div>
+            <button class="btn-primary btn-sm" data-action="send-request" data-id="{{ sug.id }}" style="width:100%;">+ Add</button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:40px;color:var(--muted);">
+        <div style="font-size:2rem;margin-bottom:8px;">👥</div>
+        Add some friends first to discover mutuals!
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Following tab -->
+    <div id="tab-following" class="tab-panel">
+      {% if following %}
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">
+        {% for f in following %}
+        <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
+          <div class="rec-avatar" style="width:36px;height:36px;font-size:0.85rem;">{{ f.name[0] }}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:0.875rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.name }}</div>
+            <div style="font-size:0.75rem;color:var(--muted);">@{{ f.username }}</div>
+          </div>
+          <a href="/chat/{{ f.id }}" style="color:var(--accent);">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:40px;color:var(--muted);">Not following anyone yet</div>
+      {% endif %}
+    </div>
+
+    <!-- Followers tab -->
+    <div id="tab-followers" class="tab-panel">
+      {% if followers %}
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">
+        {% for f in followers %}
+        <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border);">
+          <div class="rec-avatar" style="width:36px;height:36px;font-size:0.85rem;">{{ f.name[0] }}</div>
+          <div>
+            <div style="font-size:0.875rem;font-weight:500;">{{ f.name }}</div>
+            <div style="font-size:0.75rem;color:var(--muted);">@{{ f.username }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:40px;color:var(--muted);">No followers yet</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    const tabs = ['ai','mutual','following','followers'];
+    b.classList.toggle('active', tabs[i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.toggle('active', p.id === `tab-${name}`);
+  });
+}
+async function markRead() {
+  await fetch('/profile/notifications/mark-read', {method:'POST'});
+  document.querySelectorAll('.notif-dot').forEach(d => d.style.background = 'var(--muted)');
+}
+// Animate score bars on load
+window.addEventListener('load', () => {
+  document.querySelectorAll('.score-bar-fill').forEach(bar => {
+    const w = bar.style.width; bar.style.width = '0%';
+    setTimeout(() => bar.style.width = w, 100);
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — FriendSync</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f; --surface: #111118; --border: #1e1e2e;
+      --accent: #6c63ff; --accent2: #ff6b9d; --text: #e8e8f0; --muted: #5a5a7a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh; display: flex; overflow: hidden;
+    }
+    h1,h2,h3 { font-family: 'Syne', sans-serif; }
+
+    /* Left panel — visual */
+    .panel-left {
+      width: 55%; position: relative; overflow: hidden;
+      background: linear-gradient(135deg, #0d0d1a 0%, #1a0a2e 50%, #0d1a2e 100%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .panel-left::before {
+      content: ''; position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(108,99,255,0.25) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(255,107,157,0.2) 0%, transparent 50%),
+        radial-gradient(ellipse at 60% 80%, rgba(0,180,255,0.1) 0%, transparent 50%);
+    }
+    /* Floating orbs */
+    .orb {
+      position: absolute; border-radius: 50%;
+      filter: blur(60px); opacity: 0.5;
+      animation: floatOrb 8s ease-in-out infinite;
+    }
+    .orb-1 { width: 300px; height: 300px; background: var(--accent); top: 10%; left: 5%; animation-delay: 0s; }
+    .orb-2 { width: 200px; height: 200px; background: var(--accent2); bottom: 20%; right: 10%; animation-delay: -3s; }
+    .orb-3 { width: 150px; height: 150px; background: #00b4ff; top: 60%; left: 30%; animation-delay: -6s; }
+    @keyframes floatOrb {
+      0%, 100% { transform: translate(0,0) scale(1); }
+      33%  { transform: translate(20px,-15px) scale(1.05); }
+      66%  { transform: translate(-10px,20px) scale(0.95); }
+    }
+
+    /* Grid decoration */
+    .grid-lines {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(108,99,255,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(108,99,255,0.06) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    .panel-left-content { position: relative; z-index: 2; text-align: center; padding: 40px; }
+    .panel-left-content h2 {
+      font-size: 3rem; font-weight: 800; line-height: 1.1; margin-bottom: 20px;
+    }
+    .panel-left-content h2 span {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .panel-left-content p { color: rgba(232,232,240,0.6); font-size: 1rem; line-height: 1.7; max-width: 380px; margin: 0 auto 36px; }
+
+    /* Feature pills */
+    .feature-pills { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .pill {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px); border-radius: 999px;
+      padding: 8px 16px; font-size: 0.82rem; color: rgba(232,232,240,0.7);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .pill-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+    /* Right panel — form */
+    .panel-right {
+      width: 45%; display: flex; align-items: center; justify-content: center;
+      padding: 48px 56px; background: var(--surface);
+      border-left: 1px solid var(--border);
+    }
+    .form-container { width: 100%; max-width: 380px; }
+    .logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.75rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 8px; display: block;
+    }
+    .form-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
+    .form-subtitle { color: var(--muted); font-size: 0.875rem; margin-bottom: 36px; }
+
+    .form-group { margin-bottom: 20px; }
+    label { display: block; font-size: 0.8rem; font-weight: 500; color: var(--muted); margin-bottom: 7px; letter-spacing: 0.3px; }
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      color: var(--muted); pointer-events: none;
+    }
+    input {
+      width: 100%; background: var(--bg);
+      border: 1px solid var(--border); color: var(--text);
+      padding: 12px 16px 12px 44px;
+      border-radius: 11px; font-size: 0.875rem;
+      font-family: 'DM Sans', sans-serif; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+    }
+    input::placeholder { color: var(--muted); }
+
+    .btn-submit {
+      width: 100%; padding: 13px;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      color: #fff; border: none; border-radius: 11px;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s; margin-top: 8px;
+      position: relative; overflow: hidden;
+    }
+    .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(108,99,255,0.4); }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+    }
+
+    .divider { display: flex; align-items: center; gap: 12px; margin: 24px 0; }
+    .divider-line { flex: 1; height: 1px; background: var(--border); }
+    .divider span { color: var(--muted); font-size: 0.78rem; }
+
+    .form-footer { text-align: center; margin-top: 28px; }
+    .form-footer a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    .form-footer a:hover { text-decoration: underline; }
+    .form-footer p { color: var(--muted); font-size: 0.875rem; margin-bottom: 6px; }
+
+    .flash { padding: 11px 15px; border-radius: 9px; font-size: 0.83rem; margin-bottom: 18px; }
+    .flash.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #ef4444; }
+    .flash.success { background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.25); color: #00e676; }
+
+    /* Password toggle */
+    .pw-toggle {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      cursor: pointer; color: var(--muted); background: none; border: none;
+      display: flex; align-items: center;
+    }
+    .pw-toggle:hover { color: var(--text); }
+
+    @media (max-width: 768px) {
+      .panel-left { display: none; }
+      .panel-right { width: 100%; padding: 36px 24px; }
+    }
+  </style>
+</head>
+<body>
+<div class="panel-left">
+  <div class="grid-lines"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="panel-left-content">
+    <h2>Connect with people who <span>get you</span></h2>
+    <p>FriendSync uses AI to match you with people who share your passions, not just your ZIP code.</p>
+    <div class="feature-pills">
+      <div class="pill"><span class="pill-dot" style="background:#6c63ff;"></span> AI-Powered Matching</div>
+      <div class="pill"><span class="pill-dot" style="background:#ff6b9d;"></span> Interest Clustering</div>
+      <div class="pill"><span class="pill-dot" style="background:#00e676;"></span> Real-time Chat</div>
+      <div class="pill"><span class="pill-dot" style="background:#00b4ff;"></span> Mutual Discovery</div>
+    </div>
+  </div>
+</div>
+
+<div class="panel-right">
+  <div class="form-container">
+    <span class="logo">FriendSync</span>
+    <h1 class="form-title">Welcome back</h1>
+    <p class="form-subtitle">Sign in to continue discovering your people</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for cat, msg in messages %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+      {% endfor %}{% endif %}
+    {% endwith %}
+
+    <form method="POST" action="/auth/login">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <div class="input-wrap">
+          <span class="input-icon">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          </span>
+          <input type="text" id="username" name="username" placeholder="your_username" required autocomplete="username">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrap">
+          <span class="input-icon">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          </span>
+          <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+          <button type="button" class="pw-toggle" onclick="togglePassword('password', this)">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div style="text-align:right;margin-bottom:20px;">
+        <a href="/auth/forgot-password" style="color:var(--accent);font-size:0.82rem;text-decoration:none;">Forgot password?</a>
+      </div>
+      <button type="submit" class="btn-submit">Sign In →</button>
+    </form>
+
+    <div class="form-footer">
+      <p>Don't have an account? <a href="/auth/register">Create one free</a></p>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePassword(id, btn) {
+  const input = document.getElementById(id);
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+</script>
+</body>
+</html>

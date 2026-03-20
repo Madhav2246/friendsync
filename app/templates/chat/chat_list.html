@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Messages — FriendSync{% endblock %}
+
+{% block extra_head %}
+<style>
+  .convo-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px; border-radius: 14px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--card-bg);
+    text-decoration: none; color: var(--text);
+    transition: all 0.2s; margin-bottom: 10px;
+  }
+  .convo-item:hover { border-color: rgba(108,99,255,0.4); transform: translateX(4px); }
+  .convo-avatar {
+    width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; color: #fff;
+    position: relative;
+  }
+  .unread-badge {
+    position: absolute; top: -3px; right: -3px;
+    background: var(--accent2); color: #fff;
+    font-size: 0.65rem; font-weight: 700;
+    width: 18px; height: 18px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--bg);
+  }
+  .online-dot {
+    position: absolute; bottom: 1px; right: 1px;
+    width: 11px; height: 11px; background: #00e676;
+    border-radius: 50%; border: 2px solid var(--bg);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:680px;margin:0 auto;">
+  <div style="margin-bottom:28px;display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <h1 style="font-size:1.75rem;font-weight:800;margin-bottom:4px;">Messages</h1>
+      <p style="color:var(--muted);font-size:0.875rem;">{{ conversations|length }} conversation{{ 's' if conversations|length != 1 }}</p>
+    </div>
+  </div>
+
+  {% if conversations %}
+    {% for convo in conversations %}
+    <a href="/chat/{{ convo.friend.id }}" class="convo-item">
+      <div class="convo-avatar">
+        {{ convo.friend.name[0] }}
+        {% if convo.unread > 0 %}
+        <span class="unread-badge">{{ convo.unread }}</span>
+        {% endif %}
+        {% if convo.friend.is_online %}
+        <span class="online-dot"></span>
+        {% endif %}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-weight:{% if convo.unread > 0 %}700{% else %}500{% endif %};font-size:0.9rem;">
+            {{ convo.friend.name }}
+          </span>
+          {% if convo.last_message %}
+          <span style="font-size:0.72rem;color:var(--muted);">
+            {{ convo.last_message.created_at.strftime('%b %d') }}
+          </span>
+          {% endif %}
+        </div>
+        <div style="font-size:0.8rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:400px;">
+          {% if convo.last_message %}
+            {% if convo.last_message.sender_id == session['user_id'] %}
+              <span style="color:var(--accent);">You: </span>
+            {% endif %}
+            {{ convo.last_message.content }}
+          {% else %}
+            <span style="font-style:italic;">No messages yet — say hello!</span>
+          {% endif %}
+        </div>
+      </div>
+      <svg width="16" height="16" fill="none" stroke="var(--muted)" viewBox="0 0 24 24" style="flex-shrink:0;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+    </a>
+    {% endfor %}
+  {% else %}
+  <div style="text-align:center;padding:80px 20px;">
+    <div style="font-size:3rem;margin-bottom:16px;">💬</div>
+    <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:8px;">No conversations yet</h3>
+    <p style="color:var(--muted);font-size:0.875rem;margin-bottom:24px;">
+      Add some friends first, then start chatting!
+    </p>
+    <a href="/recommend/explore" class="btn-primary" style="text-decoration:none;">Find Friends →</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

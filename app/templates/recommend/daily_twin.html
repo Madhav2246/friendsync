@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+{% block title %}Daily Twin — FriendSync{% endblock %}
+
+{% block extra_head %}
+<style>
+  .twin-card {
+    max-width: 480px; margin: 0 auto;
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 24px; overflow: hidden;
+    position: relative;
+  }
+  .twin-header {
+    background: linear-gradient(135deg, #1a0a2e, #0d1a3e);
+    padding: 32px 32px 48px; text-align: center; position: relative;
+  }
+  .twin-header::after {
+    content:''; position:absolute; inset:0;
+    background:
+      radial-gradient(ellipse at 30% 50%, rgba(108,99,255,0.3) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 30%, rgba(255,107,157,0.2) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .grid-bg {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(108,99,255,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(108,99,255,0.07) 1px, transparent 1px);
+    background-size: 36px 36px;
+  }
+  .twin-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,107,157,0.15); border: 1px solid rgba(255,107,157,0.3);
+    border-radius: 999px; padding: 5px 14px; font-size: 0.78rem;
+    color: var(--accent2); margin-bottom: 20px; position: relative; z-index: 2;
+  }
+  .mystery-avatar {
+    width: 96px; height: 96px; border-radius: 50%; margin: 0 auto 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.5rem; position: relative; z-index: 2;
+    box-shadow: 0 8px 32px rgba(108,99,255,0.4);
+    transition: all 0.5s ease;
+  }
+  .mystery-avatar.revealed {
+    background: linear-gradient(135deg, #00e676, #00b4ff);
+  }
+  .mystery-avatar img {
+    width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: none;
+  }
+  .mystery-avatar.has-photo img { display: block; }
+  .mystery-avatar.has-photo .avatar-emoji { display: none; }
+
+  .score-ring {
+    position: absolute; top: -6px; right: -6px;
+    background: var(--accent2); color: #fff;
+    border-radius: 999px; padding: 3px 10px;
+    font-size: 0.72rem; font-weight: 700;
+    border: 2px solid var(--card-bg); z-index: 3;
+  }
+  .twin-body { padding: 28px 32px; }
+  .shared-interests { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+  .interest-pill {
+    background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.2);
+    border-radius: 8px; padding: 5px 12px; font-size: 0.8rem; color: var(--text);
+  }
+  .action-btns { display: flex; gap: 10px; margin-top: 20px; }
+  .wave-btn {
+    flex: 1; padding: 13px; border-radius: 12px; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+    background: linear-gradient(135deg, var(--accent2), #ff4d8d);
+    color: #fff; border: none;
+  }
+  .wave-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,107,157,0.4); }
+  .wave-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .reveal-btn {
+    padding: 13px 20px; border-radius: 12px; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+    background: transparent; color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .reveal-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .mutual-banner {
+    display: none; background: linear-gradient(135deg, rgba(0,230,118,0.15), rgba(0,180,255,0.1));
+    border: 1px solid rgba(0,230,118,0.3); border-radius: 14px;
+    padding: 16px 20px; margin-top: 16px; text-align: center;
+  }
+  .mutual-banner.show { display: block; }
+  .mutual-banner h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; color: #00e676; }
+
+  .countdown-bar {
+    background: var(--border); border-radius: 999px; height: 4px;
+    margin-top: 20px; overflow: hidden;
+  }
+  .countdown-fill {
+    height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 1s linear;
+  }
+  .countdown-label { font-size: 0.72rem; color: var(--muted); margin-top: 6px; text-align: right; }
+
+  .no-twin {
+    text-align: center; padding: 60px 32px;
+  }
+  .pulse {
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.85; }
+  }
+  .history-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px; background: var(--bg); border-radius: 12px;
+    border: 1px solid var(--border); margin-bottom: 8px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:560px;margin:0 auto;">
+
+  <!-- Page title -->
+  <div style="text-align:center;margin-bottom:32px;">
+    <div style="font-size:2.5rem;margin-bottom:10px;">🌟</div>
+    <h1 style="font-size:1.75rem;font-weight:800;margin-bottom:8px;">Daily Twin</h1>
+    <p style="color:var(--muted);font-size:0.875rem;">Every day, AI finds your closest interest match. No pressure — just curiosity.</p>
+  </div>
+
+  {% if twin %}
+  <div class="twin-card">
+    <!-- Animated header -->
+    <div class="twin-header">
+      <div class="grid-bg"></div>
+      <div class="twin-badge">
+        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+        Today's Match
+      </div>
+
+      <div class="mystery-avatar pulse {% if twin.revealed and twin.profile_picture %}has-photo{% elif twin.revealed %}revealed{% endif %}" id="twin-avatar">
+        <span class="avatar-emoji" id="avatar-emoji">{% if twin.revealed %}😊{% else %}❓{% endif %}</span>
+        {% if twin.revealed and twin.profile_picture %}
+        <img src="{{ twin.profile_picture }}" alt="twin">
+        {% endif %}
+        <span class="score-ring">{{ twin.score }}%</span>
+      </div>
+
+      <div id="twin-name" style="position:relative;z-index:2;">
+        {% if twin.revealed %}
+          <div style="font-size:1.2rem;font-weight:700;margin-bottom:4px;">{{ twin.name }}</div>
+          <div style="color:rgba(232,232,240,0.6);font-size:0.85rem;">@{{ twin.username }}</div>
+        {% else %}
+          <div style="font-size:1.1rem;font-weight:700;margin-bottom:4px;color:rgba(232,232,240,0.7);">Someone out there...</div>
+          <div style="color:rgba(232,232,240,0.4);font-size:0.82rem;">Wave 👋 to reveal their identity</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="twin-body">
+      <div style="font-size:0.82rem;color:var(--muted);margin-bottom:8px;font-weight:500;">YOU BOTH LOVE</div>
+      <div class="shared-interests" id="shared-interests">
+        <!-- Populated by JS based on score -->
+        <span class="interest-pill">🎬 Movies</span>
+        <span class="interest-pill">🎵 Music</span>
+        <span class="interest-pill">💻 Technology</span>
+      </div>
+
+      <div style="background:var(--bg);border-radius:12px;padding:14px;border:1px solid var(--border);margin-bottom:4px;">
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:6px;">INTEREST SIMILARITY</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="flex:1;background:var(--border);border-radius:999px;height:8px;overflow:hidden;">
+            <div id="score-bar" style="height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width 1s ease;"></div>
+          </div>
+          <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;color:var(--accent);">{{ twin.score }}%</span>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      {% if not twin.waved %}
+      <div class="action-btns">
+        <button class="wave-btn" id="wave-btn" onclick="waveAtTwin({{ twin.match_db_id }})">
+          👋 Send Anonymous Wave
+        </button>
+        {% if not twin.revealed %}
+        <button class="reveal-btn" onclick="revealTwin({{ twin.match_db_id }})">
+          👁 Reveal
+        </button>
+        {% endif %}
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:16px;background:rgba(108,99,255,0.08);border-radius:12px;border:1px solid rgba(108,99,255,0.2);margin-top:16px;">
+        <div style="font-size:1.5rem;margin-bottom:6px;">👋</div>
+        <div style="font-weight:600;font-size:0.9rem;">Wave sent!</div>
+        <div style="color:var(--muted);font-size:0.8rem;margin-top:4px;">Waiting to see if they wave back...</div>
+      </div>
+      {% endif %}
+
+      {% if twin.revealed and twin.username %}
+      <a href="/profile/{{ twin.username }}" class="btn-primary"
+         style="display:flex;justify-content:center;text-decoration:none;margin-top:12px;">
+        View Profile →
+      </a>
+      {% endif %}
+
+      <!-- Mutual match banner -->
+      <div class="mutual-banner" id="mutual-banner">
+        <h3>🎉 It's a Match!</h3>
+        <p style="color:var(--muted);font-size:0.875rem;">You both waved! A friend request has been sent automatically.</p>
+      </div>
+
+      <!-- Countdown to next match -->
+      <div style="margin-top:20px;">
+        <div class="countdown-bar">
+          <div class="countdown-fill" id="countdown-fill" style="width:100%;"></div>
+        </div>
+        <div class="countdown-label">Next match refreshes at midnight · <span id="countdown-time"></span></div>
+      </div>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="twin-card">
+    <div class="no-twin">
+      <div style="font-size:3rem;margin-bottom:16px;">🔍</div>
+      <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:8px;">No twin found today</h3>
+      <p style="color:var(--muted);font-size:0.875rem;margin-bottom:20px;">
+        Add more interests or wait for more users to join. Check back tomorrow!
+      </p>
+      <a href="/profile/interests" class="btn-primary" style="text-decoration:none;">Update Interests →</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- How it works -->
+  <div class="card" style="margin-top:20px;">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;margin-bottom:14px;">HOW IT WORKS</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      {% for step in [
+        ('🤖', 'AI finds your #1 closest interest match daily'),
+        ('👻', 'Their identity is hidden until you wave'),
+        ('👋', 'Send an anonymous wave — they get notified'),
+        ('🎉', 'If they wave back, profiles reveal automatically'),
+        ('🔄', 'New match every midnight — fresh chance every day')
+      ] %}
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <span style="font-size:1.2rem;flex-shrink:0;">{{ step[0] }}</span>
+        <span style="font-size:0.85rem;color:var(--muted);line-height:1.5;">{{ step[1] }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Animate score bar on load
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const bar = document.getElementById('score-bar');
+    if (bar) bar.style.width = '{{ twin.score if twin else 0 }}%';
+  }, 300);
+});
+
+// Countdown to midnight
+function updateCountdown() {
+  const now   = new Date();
+  const midnight = new Date();
+  midnight.setHours(24, 0, 0, 0);
+  const diff  = midnight - now;
+  const hours = Math.floor(diff / 3600000);
+  const mins  = Math.floor((diff % 3600000) / 60000);
+  const secs  = Math.floor((diff % 60000) / 1000);
+  const el = document.getElementById('countdown-time');
+  if (el) el.textContent = `${hours}h ${mins}m ${secs}s`;
+  // Update progress bar
+  const totalDay = 24 * 3600000;
+  const pct = ((totalDay - diff) / totalDay * 100).toFixed(1);
+  const fill = document.getElementById('countdown-fill');
+  if (fill) fill.style.width = (100 - pct) + '%';
+}
+setInterval(updateCountdown, 1000);
+updateCountdown();
+
+// Wave action
+async function waveAtTwin(matchId) {
+  const btn = document.getElementById('wave-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Sending...';
+  try {
+    const res  = await fetch(`/recommend/daily-twin/wave/${matchId}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.mutual) {
+      document.getElementById('mutual-banner').classList.add('show');
+      showToast('🎉 Mutual match! Friend request sent!', 'success');
+      revealUI(data.name, data.username);
+    } else {
+      showToast('👋 Wave sent! Waiting for them to wave back...', 'info');
+      btn.closest('.action-btns').innerHTML = `
+        <div style="text-align:center;padding:14px;background:rgba(108,99,255,0.08);border-radius:12px;border:1px solid rgba(108,99,255,0.2);width:100%;">
+          <div style="font-size:1.3rem;margin-bottom:4px;">👋</div>
+          <div style="font-weight:600;font-size:0.875rem;">Wave sent!</div>
+          <div style="color:var(--muted);font-size:0.78rem;margin-top:3px;">Waiting to see if they wave back...</div>
+        </div>`;
+      if (data.revealed) revealUI(data.name, data.username);
+    }
+  } catch {
+    btn.disabled = false;
+    btn.textContent = '👋 Send Anonymous Wave';
+    showToast('Something went wrong. Try again.', 'error');
+  }
+}
+
+// Reveal action
+async function revealTwin(matchId) {
+  try {
+    const res  = await fetch(`/recommend/daily-twin/reveal/${matchId}`, { method: 'POST' });
+    const data = await res.json();
+    revealUI(data.name, data.username, data.profile_picture);
+  } catch {
+    showToast('Could not reveal. Try again.', 'error');
+  }
+}
+
+function revealUI(name, username, pic) {
+  const av   = document.getElementById('twin-avatar');
+  const nameEl = document.getElementById('twin-name');
+  const emoji = document.getElementById('avatar-emoji');
+
+  av.classList.remove('pulse');
+  av.classList.add('revealed');
+  if (emoji) emoji.textContent = '😊';
+
+  if (pic) {
+    const img = document.createElement('img');
+    img.src = pic; img.alt = name;
+    av.appendChild(img);
+    av.classList.add('has-photo');
+    if (emoji) emoji.style.display = 'none';
+  }
+
+  if (nameEl) {
+    nameEl.innerHTML = `
+      <div style="font-size:1.2rem;font-weight:700;margin-bottom:4px;">${name}</div>
+      <div style="color:rgba(232,232,240,0.6);font-size:0.85rem;">@${username}</div>`;
+  }
+
+  // Add view profile button
+  const body = document.querySelector('.twin-body');
+  if (body && !document.querySelector('.view-profile-btn')) {
+    const link = document.createElement('a');
+    link.href = `/profile/${username}`;
+    link.className = 'btn-primary view-profile-btn';
+    link.style = 'display:flex;justify-content:center;text-decoration:none;margin-top:12px;';
+    link.textContent = 'View Profile →';
+    body.insertBefore(link, document.getElementById('mutual-banner'));
+  }
+}
+</script>
+{% endblock %}

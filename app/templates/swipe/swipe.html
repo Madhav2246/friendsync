@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+{% block title %}This or That — FriendSync{% endblock %}
+
+{% block extra_head %}
+<style>
+  .swipe-page { max-width: 480px; margin: 0 auto; }
+
+  .progress-wrap { margin-bottom: 24px; }
+  .progress-top  { display:flex; justify-content:space-between; margin-bottom:8px; }
+  .progress-track { height:6px; background:var(--border); border-radius:999px; overflow:hidden; }
+  .progress-fill  {
+    height:100%; border-radius:999px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    transition:width 0.4s ease;
+  }
+
+  /* Single visible card — no stacking tricks */
+  .card-area {
+    position: relative; margin-bottom: 20px;
+  }
+  .swipe-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 24px; overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    transition: border-color 0.2s;
+  }
+  .swipe-card.tilting-left  { border-color: rgba(255,107,157,0.6); }
+  .swipe-card.tilting-right { border-color: rgba(108,99,255,0.6);  }
+
+  .card-label {
+    background: var(--surface); padding: 12px 20px;
+    font-size: 0.72rem; font-weight: 700; color: var(--muted);
+    letter-spacing: 1px; text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .card-num { color: var(--accent); font-family:'Syne',sans-serif; font-size:0.85rem; }
+
+  .choices {
+    display: grid; grid-template-columns: 1fr 1fr;
+    position: relative; min-height: 220px;
+  }
+  .choice-btn {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 28px 16px;
+    background: transparent; border: none; color: var(--text);
+    font-family:'DM Sans',sans-serif; cursor: pointer;
+    transition: background 0.15s; position: relative;
+  }
+  .choice-btn:first-child { border-right: 1px solid var(--border); }
+  .choice-btn:hover  { background: rgba(108,99,255,0.07); }
+  .choice-btn:active { background: rgba(108,99,255,0.15); }
+  .choice-btn .emoji { font-size: 2.4rem; line-height: 1; pointer-events:none; }
+  .choice-btn .clabel {
+    font-size: 0.9rem; font-weight: 600; text-align: center;
+    line-height: 1.3; pointer-events:none;
+  }
+
+  .vs-divider {
+    position: absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:30px; height:30px; background:var(--surface);
+    border:1px solid var(--border); border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.6rem; font-weight:800; color:var(--muted);
+    pointer-events:none; z-index:5;
+  }
+
+  /* Choice indicator overlay */
+  .swipe-indicator {
+    position:absolute; top:16px; padding:6px 14px;
+    border-radius:999px; font-size:0.8rem; font-weight:700;
+    opacity:0; transition:opacity 0.15s; pointer-events:none; z-index:10;
+  }
+  .ind-a { left:16px;  background:rgba(255,107,157,0.2); color:var(--accent2); border:1px solid var(--accent2); }
+  .ind-b { right:16px; background:rgba(108,99,255,0.2);  color:var(--accent);  border:1px solid var(--accent);  }
+
+  /* Tap buttons below card */
+  .tap-btns { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .tap-btn-a {
+    padding:12px; border-radius:12px; font-size:0.85rem; font-weight:600;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s;
+    background:rgba(255,107,157,0.1); color:var(--accent2);
+    border:1px solid rgba(255,107,157,0.3);
+  }
+  .tap-btn-a:hover { background:rgba(255,107,157,0.2); }
+  .tap-btn-b {
+    padding:12px; border-radius:12px; font-size:0.85rem; font-weight:600;
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s;
+    background:rgba(108,99,255,0.1); color:var(--accent);
+    border:1px solid rgba(108,99,255,0.3);
+  }
+  .tap-btn-b:hover { background:rgba(108,99,255,0.2); }
+
+  /* Milestone popup */
+  .m-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.65);
+    z-index:999; display:none;
+  }
+  .m-overlay.show { display:block; }
+  .m-popup {
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(0.85);
+    background:var(--card-bg); border:1px solid rgba(108,99,255,0.4);
+    border-radius:24px; padding:32px 28px; text-align:center;
+    z-index:1000; max-width:360px; width:90%;
+    box-shadow:0 24px 80px rgba(0,0,0,0.6);
+    opacity:0; pointer-events:none;
+    transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .m-popup.show { opacity:1; transform:translate(-50%,-50%) scale(1); pointer-events:all; }
+  .m-rec {
+    display:flex; align-items:center; gap:12px;
+    padding:11px; background:var(--bg); border-radius:11px;
+    border:1px solid var(--border); margin-bottom:8px; text-align:left;
+  }
+  .m-av {
+    width:36px; height:36px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; color:#fff; font-size:0.85rem;
+  }
+
+  /* Done state */
+  .done-state { text-align:center; padding:60px 20px; }
+  .big-score {
+    font-family:'Syne',sans-serif; font-size:5rem; font-weight:800;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    line-height:1;
+  }
+
+  /* Fly animation */
+  @keyframes flyLeft  { to { transform:translateX(-150%) rotate(-25deg); opacity:0; } }
+  @keyframes flyRight { to { transform:translateX(150%)  rotate(25deg);  opacity:0; } }
+  .fly-left  { animation:flyLeft  0.3s ease forwards; }
+  .fly-right { animation:flyRight 0.3s ease forwards; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="swipe-page">
+
+  <div style="text-align:center;margin-bottom:22px;">
+    <div style="font-size:2rem;margin-bottom:6px;">🃏</div>
+    <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:5px;">This or That?</h1>
+    <p style="color:var(--muted);font-size:0.82rem;">Tap a choice — AI learns your vibe and finds better matches.</p>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-top">
+      <span style="font-size:0.78rem;color:var(--muted);" id="prog-label">{{ swipe_count }} of {{ total }} done</span>
+      <span style="font-size:0.78rem;color:var(--accent);font-weight:600;" id="streak-text"></span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"
+           style="width:{{ (swipe_count / total * 100)|int }}%;"></div>
+    </div>
+  </div>
+
+  <!-- Card area -->
+  <div class="card-area" id="card-area">
+    <!-- Rendered by JS -->
+  </div>
+
+  <!-- Tap buttons -->
+  <div class="tap-btns" id="tap-btns" style="display:none;">
+    <button class="tap-btn-a" id="btn-a" onclick="pick('a')">← A</button>
+    <button class="tap-btn-b" id="btn-b" onclick="pick('b')">B →</button>
+  </div>
+
+</div>
+
+<!-- Milestone overlay -->
+<div class="m-overlay" id="m-overlay" onclick="closeMilestone()"></div>
+<div class="m-popup"   id="m-popup">
+  <div style="font-size:2rem;margin-bottom:10px;">🎯</div>
+  <h3 style="font-size:1rem;font-weight:800;margin-bottom:6px;">Your vibe is taking shape!</h3>
+  <p style="color:var(--muted);font-size:0.8rem;margin-bottom:14px;">People who think like you:</p>
+  <div id="m-recs"></div>
+  <div style="display:flex;gap:8px;margin-top:14px;">
+    <a href="/recommend/explore" class="btn-primary btn-sm" style="text-decoration:none;flex:1;text-align:center;">See All Matches</a>
+    <button onclick="closeMilestone()" class="btn-secondary btn-sm" style="flex:1;">Keep Swiping</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// All cards passed from server as JSON
+const ALL_CARDS = {{ cards | tojson }};
+let queue      = [...ALL_CARDS];
+let swipeCount = {{ swipe_count }};
+const total    = {{ total }};
+let streak     = 0;
+let busy       = false;   // prevent double-tap
+
+// ── Render current card ───────────────────────────────────
+function renderCard() {
+  const area    = document.getElementById('card-area');
+  const tapBtns = document.getElementById('tap-btns');
+
+  if (queue.length === 0) {
+    showDone();
+    tapBtns.style.display = 'none';
+    return;
+  }
+
+  const card = queue[0];
+  const [emojiA, ...wordsA] = card.a.split(' ');
+  const [emojiB, ...wordsB] = card.b.split(' ');
+  const labelA = wordsA.join(' ');
+  const labelB = wordsB.join(' ');
+
+  area.innerHTML = `
+    <div class="swipe-card" id="active-card">
+      <div class="swipe-indicator ind-a" id="ind-a">← ${labelA}</div>
+      <div class="swipe-indicator ind-b" id="ind-b">${labelB} →</div>
+      <div class="card-label">
+        <span>${card.label}</span>
+        <span class="card-num">#${swipeCount + 1}</span>
+      </div>
+      <div class="choices" style="position:relative;">
+        <button class="choice-btn" onclick="pick('a')">
+          <span class="emoji">${emojiA}</span>
+          <span class="clabel">${labelA}</span>
+        </button>
+        <div class="vs-divider">VS</div>
+        <button class="choice-btn" onclick="pick('b')">
+          <span class="emoji">${emojiB}</span>
+          <span class="clabel">${labelB}</span>
+        </button>
+      </div>
+    </div>`;
+
+  // Update bottom tap buttons
+  document.getElementById('btn-a').textContent = `← ${card.a}`;
+  document.getElementById('btn-b').textContent = `${card.b} →`;
+  tapBtns.style.display = 'grid';
+
+  attachDrag();
+}
+
+// ── Pick a choice ─────────────────────────────────────────
+async function pick(choice) {
+  if (busy || queue.length === 0) return;
+  busy = true;
+
+  const card   = queue[0];
+  const cardEl = document.getElementById('active-card');
+
+  // Fly animation
+  cardEl.classList.add(choice === 'a' ? 'fly-left' : 'fly-right');
+
+  try {
+    const res  = await fetch('/swipe/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ card_id: card.id, choice })
+    });
+    const data = await res.json();
+    swipeCount = data.swipe_count;
+    streak++;
+
+    // Update progress
+    const pct = Math.round(swipeCount / total * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('prog-label').textContent = `${swipeCount} of ${total} done`;
+
+    // Streak
+    const streakEl = document.getElementById('streak-text');
+    if (streak >= 3) streakEl.textContent = `🔥 ${streak} streak!`;
+    else streakEl.textContent = '';
+
+    // Milestone
+    if (data.milestone && data.recommendations && data.recommendations.length) {
+      setTimeout(() => showMilestone(data.recommendations), 400);
+    }
+
+  } catch(e) {
+    showToast('Something went wrong', 'error');
+    cardEl.classList.remove('fly-left', 'fly-right');
+    busy = false;
+    return;
+  }
+
+  // After animation, show next card
+  setTimeout(() => {
+    queue.shift();
+    busy = false;
+    renderCard();
+  }, 320);
+}
+
+// ── Drag support ──────────────────────────────────────────
+function attachDrag() {
+  const card = document.getElementById('active-card');
+  if (!card) return;
+  let startX = null;
+
+  const onStart = x => { startX = x; };
+  const onMove  = x => {
+    if (startX === null) return;
+    const dx  = x - startX;
+    const rot = dx * 0.07;
+    card.style.transform = `translateX(${dx}px) rotate(${rot}deg)`;
+    card.classList.toggle('tilting-left',  dx < -30);
+    card.classList.toggle('tilting-right', dx >  30);
+    const ia = document.getElementById('ind-a');
+    const ib = document.getElementById('ind-b');
+    if (ia) ia.style.opacity = dx < -30 ? Math.min((-dx-30)/80, 1) : 0;
+    if (ib) ib.style.opacity = dx >  30 ? Math.min((dx-30)/80,  1) : 0;
+  };
+  const onEnd = x => {
+    if (startX === null) return;
+    const dx = x - startX;
+    startX   = null;
+    if (Math.abs(dx) > 80) {
+      pick(dx < 0 ? 'a' : 'b');
+    } else {
+      card.style.transform = '';
+      card.classList.remove('tilting-left','tilting-right');
+      const ia = document.getElementById('ind-a');
+      const ib = document.getElementById('ind-b');
+      if (ia) ia.style.opacity = 0;
+      if (ib) ib.style.opacity = 0;
+    }
+  };
+
+  card.addEventListener('mousedown',  e => onStart(e.clientX));
+  document.addEventListener('mousemove',  e => { if(startX!==null) onMove(e.clientX); });
+  document.addEventListener('mouseup',    e => onEnd(e.clientX));
+  card.addEventListener('touchstart', e => onStart(e.touches[0].clientX), {passive:true});
+  document.addEventListener('touchmove',  e => { if(startX!==null) onMove(e.touches[0].clientX); }, {passive:true});
+  document.addEventListener('touchend',   e => onEnd(e.changedTouches[0].clientX));
+}
+
+// ── Milestone popup ───────────────────────────────────────
+function showMilestone(recs) {
+  document.getElementById('m-recs').innerHTML = recs.slice(0,3).map(r => `
+    <div class="m-rec">
+      <div class="m-av">${r.name[0]}</div>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:0.85rem;">${r.name}</div>
+        <div style="font-size:0.73rem;color:var(--muted);">${r.reason||'Similar interests'}</div>
+      </div>
+      <span style="font-size:0.75rem;color:var(--accent);font-weight:700;">${r.score}%</span>
+    </div>`).join('');
+  document.getElementById('m-overlay').classList.add('show');
+  document.getElementById('m-popup').classList.add('show');
+}
+function closeMilestone() {
+  document.getElementById('m-overlay').classList.remove('show');
+  document.getElementById('m-popup').classList.remove('show');
+}
+
+// ── Done state ────────────────────────────────────────────
+function showDone() {
+  document.getElementById('card-area').innerHTML = `
+    <div class="done-state">
+      <div class="big-score">${swipeCount}</div>
+      <div style="font-size:1rem;font-weight:700;margin:10px 0 6px;">Cards Swiped!</div>
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:24px;max-width:280px;margin-left:auto;margin-right:auto;">
+        Your profile is updated. Matches are now more accurate!
+      </p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <a href="/recommend/explore" class="btn-primary" style="text-decoration:none;">See New Matches →</a>
+        <button onclick="resetAndPlay()" class="btn-secondary">Play Again 🔄</button>
+      </div>
+    </div>`;
+}
+
+async function resetAndPlay() {
+  await fetch('/swipe/reset', { method:'POST' });
+  location.reload();
+}
+
+// ── Start ─────────────────────────────────────────────────
+renderCard();
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Environment variables
+.env
+
+# Database
+instance/
+*.db
+*.sqlite3
+
+# Sessions
+flask_sessions/
+
+# Uploads (optional — comment out if you want to keep them)
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+
+# Flask cache
+.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
