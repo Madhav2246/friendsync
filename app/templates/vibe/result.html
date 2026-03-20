@@ -1,10 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Vibe Check Result — FriendSync  @media (max-width: 768px) {
-    .answer-row { gap: 5px; }
-    .ans-pill { font-size: 0.75rem; padding: 8px 8px; }
-    .hero-bg { padding: 28px 18px 36px; }
-  }
-{% endblock %}
+{% block title %}Vibe Check Result — FriendSync{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -130,11 +125,6 @@
     to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
   }
 </style>
-  @media (max-width: 768px) {
-    .answer-row { gap: 5px; }
-    .ans-pill { font-size: 0.75rem; padding: 8px 8px; }
-    .hero-bg { padding: 28px 18px 36px; }
-  }
 {% endblock %}
 
 {% block content %}
@@ -315,11 +305,6 @@
 {% if vc.status == 'matched' %}
 <div class="confetti-wrap" id="confetti"></div>
 {% endif %}
-  @media (max-width: 768px) {
-    .answer-row { gap: 5px; }
-    .ans-pill { font-size: 0.75rem; padding: 8px 8px; }
-    .hero-bg { padding: 28px 18px 36px; }
-  }
 {% endblock %}
 
 {% block extra_scripts %}
@@ -345,9 +330,4 @@ for (let i = 0; i < 60; i++) {
 setTimeout(() => wrap.remove(), 4000);
 </script>
 {% endif %}
-  @media (max-width: 768px) {
-    .answer-row { gap: 5px; }
-    .ans-pill { font-size: 0.75rem; padding: 8px 8px; }
-    .hero-bg { padding: 28px 18px 36px; }
-  }
 {% endblock %}
